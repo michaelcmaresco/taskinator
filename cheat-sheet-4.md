@@ -288,3 +288,232 @@ Module - 4 - Web API's
 
                     We'll tackle this type of refactor next. But first, let's do a quick safety check. The current state of your JavaScript should match this code:
 
+
+
+4.2.7 Refactor the code to organize functionality. 
+
+    The application works like we want it to. But with the current createTaskHandler() function, we'd struggle to add more content to a task item or the form for new features. In this step, we'll split up the tasks that each function is performing.
+
+    Sometimes it's better to have many functions that each perform one task than to have one function that performs many tasks. We might want to do this for many reasons, such as one of the following:
+
+    Functions with a lot of code performing separate tasks could become difficult to read and understand.
+
+    Setting up a function to do multiple tasks, like getting the form values and then printing them to the page, lowers the potential to reuse the function for another part of the application.
+
+    Both of these reasons can be hard to diagnose in the moment. That will get easier as you become more adept at predicting what the application may need in the future.
+
+    Let's take a moment and outline what we'll do to refactor the code:
+
+Rename the handler function to be a little more specific to the event it's handling.
+
+Create a new function to take in the task's name and title as arguments and create the HTML elements that get added to the page.
+
+Move the code that creates and adds HTML elements from the handler function into the newly created function.
+
+Update the handler function to send the task name and type values from the form to the newly created function.
+
+We're mostly just reorganizing code that we've already written, so a lot of work has already been done. We just need to get the code to its proper place.
+
+We'll start by updating the name of the handler function. In script.js, change the createTaskHandler function name to taskFormHandler wherever the name is used: in the function's variable declaration and in the addEventListener() method at the bottom of the file.
+
+If we update the name in both places, the application should still work, but we should test it before we move on, just in case. Save script.js and test the code by submitting the form.
+
+If it still works, great! If it doesn't, double-check that nothing was spelled incorrectly. If the name of the handler function was all that changed before it stopped working, then there may be a typo or misspelling somewhere.
+
+HINT:
+    Don't forget to use the Chrome DevTools console tab to see if any errors show up.
+
+
+Next we'll create a new function. We'll add the following code right below the taskFormHandler() function and above the addEventListener() method:
+
+'var createTaskEl = function(taskDataObj) {
+
+}'
+
+We just created a new function called createTaskEl. As the name indicates, it will hold the code that creates a new task HTML element. But if we're going to provide this function with both the task's title and type, why is there only one parameter, called taskDataObj?
+
+We could set up the function to have two parameters, one for each piece of data. That may limit us in the future, though, as we may end up using more information for each task. So instead of having to add another parameter to the function every time we want to use more data, we can just set up the function to accept an object as an argument.
+
+This way, when we send the task's name and type to the createTaskEl() function, it'll look like the following code:
+
+    '// taskDataObj
+{
+  name: "Task's name",
+  type: "Task's type"
+}'
+
+Before we worry about passing the argument object, let's get the code for createTaskEl() in place. We could rewrite all of the code by hand, but it's already in the taskFormHandler() function, so we can just copy and paste it into createTaskEl().
+
+Copy the following code from taskFormHandler() and paste it into createTaskEl():
+
+' 
+// create list item
+var listItemEl = document.createElement("li");
+listItemEl.className = "task-item";
+
+// create div to hold task info and add to list item
+var taskInfoEl = document.createElement("div");
+taskInfoEl.className = "task-info";
+taskInfoEl.innerHTML = "<h3 class='task-name'>" + taskNameInput + "</h3><span class='task-type'>" + taskTypeInput + "</span>";
+
+listItemEl.appendChild(taskInfoEl);
+
+// add entire list item to list
+tasksToDoEl.appendChild(listItemEl);
+
+Once it's pasted into createTaskEl(), make sure to remove that code from taskFormHandler().
+
+Unfortunately we can't test the code yet, because we haven't updated taskFormHandler() to pass the data as arguments. Let's do that now by adding the following code to that function, to look like this:
+
+' var taskFormHandler = function(event) {
+  event.preventDefault();
+  var taskNameInput = document.querySelector("input[name='task-name']").value;
+  var taskTypeInput = document.querySelector("select[name='task-type']").value;
+
+  // package up data as an object
+  var taskDataObj = {
+    name: taskNameInput,
+    type: taskTypeInput
+  };
+
+  // send it as an argument to createTaskEl
+  createTaskEl(taskDataObj);
+}'
+
+We gathered the form's values and placed them into an object with a name and title property. Then we inserted it as an argument when we called createTaskEl() at the bottom of taskFormHandler(). Doing this makes taskFormHandler() a lot easier to read, as it shows that it's collecting data and sending it elsewhere.
+
+Lastly, we need to update the code in createTaskEl() to stop looking for the taskNameInput and taskTypeInput variables and start looking for the taskDataObj argument's properties instead. If we kept the two variable names there, the application would break when we attempted to submit a form.
+
+The error would look something like the following image shows:
+
+~image~
+
+The error states that taskNameInput isn't defined. How could this be if it was clearly created in the taskFormHandler() function? Remember that any variables created within the curly braces of a function only exist within that function's braces. Any reference to it outside of the function will cause the program to break because it can't find a variable with that name. In this case, since the initialization of taskNameInput and taskTypeInput are now in taskFormHandler(), we don't have access to them in createTaskEl except by way of the object we've passed into it.
+
+    NERD NOTE: This is known as lexical scoping. 
+
+Let's fix the problem and update one line in the createTaskEl() function to look like the following code:
+
+'
+var formEl = document.querySelector("#task-form");
+var tasksToDoEl = document.querySelector("#tasks-to-do");
+
+var taskFormHandler = function(event) {
+  event.preventDefault();
+  var taskNameInput = document.querySelector("input[name='task-name']").value;
+  var taskTypeInput = document.querySelector("select[name='task-type']").value;
+
+  // package up data as an object
+  var taskDataObj = {
+      name: taskNameInput,
+      type: taskTypeInput
+  };
+
+  // send it as an argument to createTaskEl
+  createTaskEl(taskDataObj);
+};
+
+var createTaskEl = function (taskDataObj) {
+  // create list item
+  var listItemEl = document.createElement("li");
+  listItemEl.className = "task-item";
+
+  // create div to hold task info and add to list item
+  var taskInfoEl = document.createElement("div");
+  taskInfoEl.className = "task-info";
+  taskInfoEl.innerHTML = "<h3 class='task-name'>" + taskDataObj.name + "</h3><span class='task-type'>" + taskDataObj.type + "</span>";
+  listItemEl.appendChild(taskInfoEl);
+
+  // add entire list item to list
+  tasksToDoEl.appendChild(listItemEl);
+};
+
+formEl.addEventListener("submit", taskFormHandler);'
+
+
+
+Again, learning to refactor code takes time. It feels unnatural at first: who wants to second-guess code they just wrote and got working? Over time, it will feel not like second-guessing but rather like a personal challenge to be a better developer.
+
+The Taskinator application is taking shape, but as cautious developers, we have to ask ourselves, "How can this break?" We'll tackle that in the next and final step of this lesson, but first take a minute to celebrate future-proofing some of the code. It's not an easy task to perform or appreciate so early in a development career, and you've really set up the code to be reusable for any future features.
+
+Don't forget to add, commit, and push the code to GitHub before moving on to the next step!
+
+
+
+4.2.8: Address Usability Concerns:
+
+    The end of the last lesson may have gotten you on the edge of your seat wondering how the code could possibly be broken. What happens if we submit the form without filling it out? What happens if we put in a task name but forget to pick a task type? Try doing it. You should get the result shown in the following image:
+
+    ~img~
+
+    As the preceding image shows, the task item was created just fine, but it's missing content! We can't delete a task (yet), but removing empty tasks would be cumbersome even with that ability. We should validate the form fields before completing the submission.
+
+    Validation comes in a lot of different flavors, but it typically means checking that the required form fields have content and the content fits our needs. Think about creating a password: an application usually won't permit the creation of a short password without a number or uppercase letter.
+
+    Luckily we don't have to test for that here. We just need to check whether the form fields have content. If they do, let the function continue and create the task item. If either field doesn't, stop the function and let the user know that something is missing.
+
+    Let's do this right now and update taskFormHandler(), to have this code right before we create the taskDataObj variable:
+
+    '
+        // check if input values are empty strings
+        if (!taskNameInput || !taskTypeInput) {
+            alert("You need to fill out the task form!");
+            return false;
+        }'
+
+    REWIND: 
+        When used in a condition, empty strings and the number 0 are evaluated as falsy values. When we use the syntax !taskNameInput, we're checking to see if the taskNameInput variable is empty by asking if it's a falsy value.
+
+        That's what the "not" operator ! is doing here. Because the default is to check for a true value, the ! is used to check for the opposite (false) value.
+
+
+    If we save the script.js file and try to submit a task with an empty field now, we'll receive an alert that tells us we need to fill out the form, and then the function will stop when it reads return false. But if we include data in the form fields, the taskFormHandler() will work as intended and send the data to createTaskEl() to be printed to the page.
+
+    This is a basic version of form input validation; we simply check to see if any value is read from the form inputs. By using the condition shown in the following code, we're seeing if either taskNameInput or taskTitleInput is empty, or if both are empty:
+
+    '(!taskNameInput || !taskTypeInput)'
+
+    Putting an exclamation point (!) in front of the variable name will make the condition return true if the value evaluates to false. So, this code literally says, "if either one or both of the variables are not true, then proceed," which is the same as "if either one or both of the variables are false, then proceed."
+
+    That seems confusing at first, but think of it this way: we're checking to see if a false value is in fact false, which would result in the condition being true. Let's explore some examples of this in the following code before moving on:
+
+                if (true) {
+            // this will run because true is true
+            console.log("Is true true? Yes.");
+            }
+
+            if (false) {
+            // this will not run because false is not true
+            console.log("Is false true? No.");
+            }
+
+            if (3 === 10 || "a" === "a") {
+            // this will run because at least one of the conditions is true
+            console.log("Does 3 equal 10? No.");
+            console.log("Does the letter 'a' equal the letter 'a'? Yes.");
+            }
+
+            if (3 === 10 && "a" === "a") {
+            // this will not run because both conditions have to be true to run
+            console.log("Does 3 equal 10? No.");
+            console.log("Does the letter 'a' equal the letter 'a'? Yes.");
+            }
+    
+        We've now fixed a fairly large issue that this application could have, and we did it with only a few lines of code! We've made the application more user-friendly by making sure those two variables aren't empty strings and by giving feedback if users make a mistake.
+
+    Reset the Form:
+
+        We have one more thing to fix, however, and it's not so much an issue as a usability enhancement.
+
+        Let's say we're adding multiple tasks at once. Every time we fill out the form and submit a new task, we have to erase the previous task's content and start over again. While this isn't a breaking bug or issue, it adds a little frustration for the user. Luckily, we can fix this frustration with one line of code.
+
+        Let's add the following one last line of code to taskFormHandler(), underneath the validation if statement we just added:
+
+        'formEl.reset();'
+
+    Save script.js and try to submit a task. Note in the following animation that the form resets itself to its default values when you successfully submit a task. Before, it retained the task name and task type after you submitted the form.
+
+    The browser-provided DOM element interface has the reset() method, which is designed specifically for the <form> element and won't work on any other element. We could use other methods, namely by targeting each form element and resetting their values manually, but that could be cumbersome when resetting a larger form.
+
+    We're all set! We covered a lot of important ground in this lesson, and it shows. The Taskinator application not only accepts custom values from form elements but also validates the form as well. This is a big step in building this application, so let's close this feature branch's issue and merge it into the develop branch.
+
