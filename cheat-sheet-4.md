@@ -517,3 +517,602 @@ Don't forget to add, commit, and push the code to GitHub before moving on to the
 
     We're all set! We covered a lot of important ground in this lesson, and it shows. The Taskinator application not only accepts custom values from form elements but also validates the form as well. This is a big step in building this application, so let's close this feature branch's issue and merge it into the develop branch.
 
+event.preventDefault() : tells the browser to not refresh ( which is it's default behavior) when we're using things like JavaScript to handle browser events like form submissions, etc. 
+
+submit : allows us to use both a button and the enter key. 
+
+How do we use JavaScript to get the information entered into a form’s input field?
+        - We can select the form’s input element and use the value property to read its data.
+
+
+Congratulations! You just learned a process that's used in all modern web development: using JavaScript to listen for browser events in the HTML, read data from the HTML page, and write data to the HTML page. You'll use these three actions often throughout your career as a web developer.
+
+Let's recap what we accomplished in this lesson:
+
+Added a form to the HTML document and learned a new HTML element, the <select> dropdown element.
+
+Submitted forms using the submit event listener.
+
+Overrode default browser behavior by introducing event.preventDefault();
+
+Retrieved data from a form element using its value property.
+
+Used a new DOM element property, innerHTML, to write HTML code instead of simple text.
+        
+Refactored the code to be reusable.
+
+Used simple form validation with if statements to prevent user errors in the application.
+
+Reset the form to its default state by using the reset() method on a form element.
+
+This could be a shippable application at this point, as it has a lot of what we need for a task-tracking application. But we can still add some features, such as removing or editing a task and keeping track of the task's status.
+
+We'll take this on in the next lesson, and because of the refactor we did in this lesson, it will be much less complicated than it could be!
+
+
+
+
+4.3.1 Introduction:
+4.3.2 We need to make a "tasks in progress" column and a "tasks completed" column. 
+4.3.3 Develop branch - feature/updating branch. 
+4.3.4 Kanban board. 
+
+    As we introduced earlier, a Kanban board is a tool often used in productivity apps to visually convey the current stage of all tasks in a project. This is done by defining columns that tasks can move through from left to right. Some projects may define columns for To Do, In Progress, Code Review, Testing, Completed, and Blocked. We'll keep our app simple by only using three columns: Tasks To Do, Tasks In Progress, and Tasks Completed.
+
+    ON THE JOB
+    There are many Kanban-style project management apps that you'll come across in your career. Some of the more popular ones that companies use are Trello (Links to an external site.) and Jira (Links to an external site.).
+
+    End of text box.
+    We already have HTML in place for the first column, Tasks To Do, represented by a <section> element with class task-list-wrapper. Let's revisit the HTML in index.html and add two more <section> elements below the first one for the other columns:    
+
+    Note that the <section> elements all have the same class, but the inner <h2> text and id attributes on the <ul> elements are different.
+
+    Save the index.html file and refresh the browser. The page should now look like the following image:
+
+    Flexbox, CSS grid, or even the float property.
+
+    As a quick CSS refresher, use the Chrome DevTools to inspect the columns and verify which CSS properties are being used. You'll notice that the <main> element has the declaration display: flex, allowing it to control the distribution of its content. In turn, each <section> element has a flex: 1 declaration to specify that they should share space evenly.
+
+    If you haven't already, try toggling the device toolbar from the DevTools by clicking on the following icon:
+
+    An icon of two mobile devices standing upright.
+
+    The browser should then mimic what the webpage looks like on a mobile device:
+
+    In the CSS media query, the <section> elements' flex-basis is set to 100%, which defines a new width that takes up all available space. Thus, the elements become stacked.
+
+Rewind:
+    A media query defines a set of CSS rules that won't be applied unless a certain condition is met. For example, @media screen and (max-width: 900px) is applied when the screen size is equal to or less than 900 pixels wide.
+
+    Fortunately, all of this CSS was provided ahead of time in the project files, but it's always helpful to understand what's happening, regardless of whether you wrote the code yourself or not.
+
+Before we can implement the JavaScript logic to update tasks, we need to formalize a way to uniquely identify each task that's created. Consider the example in the following image:
+
+Two tasks sit in the To Do column.
+
+If you were to click the Delete button under "Learn JavaScript," how would you programmatically know which task the button was referring to? Assigning an id to each task will help keep track of what's what.
+
+CONNECT THE DOTS
+Later on in your web development journey, you'll start using databases, such as MySQL, to store information. In database design, a unique id is crucial to ensure that the correct data is being updated or deleted. Databases can be set up to create that id for you, but understanding their value now will better prepare you for the future.
+
+End of text box.
+There are a few ways we could generate this id:
+
+Use Math.random() to (hopefully) create a unique id each time we use it.
+
+Get the current time in milliseconds and call that an id.
+
+Create a counter that increments by one each time a task is created.
+
+The third option more closely matches what a MySQL database would do, and it doesn't require any new JavaScript methods, so we'll use that.
+
+At the top of script.js, declare a new variable by adding the following code:
+
+var taskIdCounter = 0;
+In the createTaskEl() function, we'll use this taskIdCounter variable to assign an id to the current task being created. How would we attach the id to an HTML element, though? There's always the id attribute, but we should be mindful that this attribute already serves a different purpose. The browser uses id to keep track of elements for CSS selectors, links, event listeners, and so on. It wouldn't be appropriate to use it for a counter value.
+
+That's where data-* attributes come in. Also known as custom data attributes, these allow developers to store extra information about an HTML element without conflicting with any of the built-in attributes.
+
+Watch the following video for an example of how to use data-* attributes:
+
+
+For Taskinator, we'll add a data-task-id attribute to each <li> element. In the createTaskEl() function, update the code as follows:
+
+var createTaskEl = function(taskDataObj) {
+  var listItemEl = document.createElement("li");
+  listItemEl.className = "task-item";
+
+  // add task id as a custom attribute
+  listItemEl.setAttribute("data-task-id", taskIdCounter);
+
+  var taskInfoEl = document.createElement("div");
+  taskInfoEl.className = "task-info";
+  taskInfoEl.innerHTML = "<h3 class='task-name'>" + taskDataObj.name + "</h3><span class='task-type'>" + taskDataObj.type + "</span>";
+  listItemEl.appendChild(taskInfoEl);
+
+  tasksToDoEl.appendChild(listItemEl);
+
+  // increase task counter for next unique id
+  taskIdCounter++;
+};
+Because we're making HTML elements in JavaScript, we needed to use the DOM method setAttribute() to add our task id. The setAttribute() method can be used to add or update any attribute on an HTML element, but the only attribute we need for now is data-task-id, which we set to the current value of taskIdCounter.
+
+PAUSE
+When the first task is created, what will the value of its data-task-id attribute be?
+
+Answer
+At the bottom of the createTaskEl() function, we then increment the counter by one (i.e., by using taskIdCounter++) to keep each id unique.
+
+Save script.js and refresh the browser. Make a few tasks, then use Chrome DevTools to inspect the DOM. You'll know everything's working correctly if you can see data-task-id attributes in the Elements panel, as shown in the following image:
+
+Chrome DevTools show two <li> elements with data-task-id attributes.
+Next, we'll add buttons and dropdowns that can reference a task's id.
+
+Now that we have an id for each task, we can start adding buttons and dropdowns that reference each id. Remember, each task will have its own set of form elements that perform different actions, as shown in the following image:
+
+A task element shows an Edit button, Delete button, and status dropdown.
+
+Because the tasks themselves are dynamically created in JavaScript, these form elements will also need to be dynamically created. It will take several lines of code to make all of these elements, so let's offset that logic into its own function.
+
+Add the following function below createTaskEl():
+
+var createTaskActions = function(taskId) {
+
+};
+Note the parameter called taskId. This is how we can pass a different id into the function each time to keep track of which elements we're creating for which task.
+
+In the createTaskActions() function, add the following lines of code to create a new <div> element with the class name "task-actions":
+
+var actionContainerEl = document.createElement("div");
+actionContainerEl.className = "task-actions";
+This <div> will act as a container for the other elements.
+
+After these lines, create two new <button> elements and append them to the <div> by adding the following code:
+
+// create edit button
+var editButtonEl = document.createElement("button");
+editButtonEl.textContent = "Edit";
+editButtonEl.className = "btn edit-btn";
+editButtonEl.setAttribute("data-task-id", taskId);
+
+actionContainerEl.appendChild(editButtonEl);
+
+// create delete button
+var deleteButtonEl = document.createElement("button");
+deleteButtonEl.textContent = "Delete";
+deleteButtonEl.className = "btn delete-btn";
+deleteButtonEl.setAttribute("data-task-id", taskId);
+
+actionContainerEl.appendChild(deleteButtonEl);
+Note that textContent, className, and setAttribute() are properties and methods of the <button> elements. The appendChild() method will then add this <button> to the <div>.
+
+These elements still only exist in memory, though, so nothing has changed on the page yet. It might seem like it's too soon to be able to test if this function is working, but we can at least verify that it returns the correct data.
+
+Add a return statement to the bottom of the createTaskActions() function:
+
+return actionContainerEl;
+Here's the fun part: we're going to run this function directly in the browser to test it out. Open Chrome DevTools and navigate to the Console tab. In the console, type createTaskActions(5) and press Enter. The results should look like the following image:
+
+DevTools Console shows a div element with two buttons inside.
+
+In this example, we ran our function, passing in the number 5 to act as a fake id. The function did what it was supposed to, however, and returned a <div> element with two <button> elements inside. The buttons also have the correct class and data-task-id attributes. Looks like everything is good to go!
+
+PRO TIP
+The last thing we're missing in createTaskActions() is the dropdown, or to be exact, the <select> element. After the delete button is appended but before the return statement, add the following block of code:
+
+var statusSelectEl = document.createElement("select");
+statusSelectEl.className = "select-status";
+statusSelectEl.setAttribute("name", "status-change");
+statusSelectEl.setAttribute("data-task-id", taskId);
+
+actionContainerEl.appendChild(statusSelectEl);
+This will add an empty <select> element to the <div> container. But looking at our HTML file again, we know that <select> elements are made up of child <option> elements. We'll need to add three options to this dropdown: To Do, In Progress, and Completed. We could create and add these one after the other, but we'd end up with some very similar-looking code.
+
+PAUSE
+What JavaScript feature could you use to execute a block of code a certain number of times?
+
+Answer
+While a for loop isn't required to make these <option> elements, any chance to make the code more DRY is always welcome! To facilitate this looping, create the following array after the statusSelectEl expressions:
+
+var statusChoices = ["To Do", "In Progress", "Completed"];
+Using an array also provides the benefit of being able to easily add new options later on without changing much code. Another win for the DRY principle!
+
+After the array declaration, write the following for loop logic:
+
+for (var i = 0; i < statusChoices.length; i++) {
+  // create option element
+  var statusOptionEl = document.createElement("option");
+  statusOptionEl.textContent = statusChoices[i];
+  statusOptionEl.setAttribute("value", statusChoices[i]);
+
+  // append to select
+  statusSelectEl.appendChild(statusOptionEl);
+}
+REWIND
+There are several pieces in that for loop that might warrant a refresher. Let's break it down:
+
+var i = 0 defines an initial counter, or iterator, variable
+i < statusChoices.length keeps the for loop running by checking the iterator against the number of items in the array (length being the property that returns the number of items)
+i++ increments the counter by one after each loop iteration
+statusChoices[i] returns the value of the array at the given index (for example, when i = 0, or statusChoices[0], we get the first item)
+Try running the createTaskActions() function in the console again to verify that the <select> element is being created correctly:
+
+DevTools console shows a div element with two buttons and a select list inside.
+
+Now that we've verified that the function works, add the following lines to the createTaskEl() function, right before the tasksToDoEl.appendChild() method:
+
+var taskActionsEl = createTaskActions(taskIdCounter);
+console.log(taskActionsEl);
+Note that we're using taskIdCounter as the argument now to create buttons that correspond to the current task id. Because createTaskActions() returns a DOM element, we can store that element in a variable (taskActionsEl). Console-logging the variable is another way to quickly verify that the function is working in this new context. Save your work and refresh the browser, then run the program to see if the element is logged to the console when you submit the form.
+
+If the console.log() statement looks good, we can remove it and finalize our function by appending taskActionsEl to listItemEl before listItemEl is appended to the page:
+
+var taskActionsEl = createTaskActions(taskIdCounter);
+listItemEl.appendChild(taskActionsEl);
+
+tasksToDoEl.appendChild(listItemEl);
+Save script.js, refresh the browser, and make a few tasks. The tasks should now look like the following image:
+
+A task element shows an Edit button, Delete button, and status dropdown.
+
+If not, check the Chrome DevTools console for errors or use the script debugger to verify that functions and methods are being called in the right order. When you're happy with the results, save your progress with Git!
+
+
+
+
+    4.3.7
+Now we're ready to add interactivity to the buttons we just created, and we'll start with the Delete button. This won't be as straightforward as adding an event listener to the formEl.
+
+In an ideal world, we could do something like what's shown in the following code:
+
+var allButtonEls = document.querySelector(".delete-btn");
+allButtonEls.addEventListener("click", myFunction);
+However, the Delete buttons don't exist when the page first loads, so this would give us an error. Also, document.querySelector() returns the first element it finds on the page, meaning only the first Delete button would work.
+
+One solution would be to add individual event listeners to the Delete buttons as we make them, as the following code demonstrates:
+
+var deleteButtonEl = document.createElement("button");
+deleteButtonEl.addEventListener("click", myFunction);
+This might make our code harder to follow, though, and the number of event listeners we'd be creating could lead to memory leaks and performance issues down the road.
+
+Fortunately, with event delegation, we can set up the click event listener on a parent element and then, through that single event listener, determine which child elements were clicked.
+
+Clicks in JavaScript are a funny thing. If an element that has parent elements is clicked, the click event bubbles, or travels, upwards to its parents. Watch the following video to further explore this idea of event bubbling:
+
+
+We'll eventually have Delete buttons in three different columns, so the most appropriate parent element to delegate this click responsibility to would be the <main> element. It currently has a class="page-content" attribute, which is used by our CSS to style the page. Let's add a new id="page-content" attribute to the main element, so that it has both class and id attributes with values of page-content, by adding the following code:
+
+Start of code snippet<main class="page-content" id="page-content">End of code snippet
+In script.js, add a reference to the page-content element at the top and then an event listener on it at the bottom of the file:
+
+var pageContentEl = document.querySelector("#page-content");
+
+// other logic...
+
+pageContentEl.addEventListener("click", taskButtonHandler);
+The addEventListener() method references a function that doesn't exist yet, so let's create that now. Add the following taskButtonHandler() function before the pageContentEl.addEventListener() call:
+
+var taskButtonHandler = function(event) {
+  console.log(event.target);
+};
+Notice that we're using a familiar friend, the event object. In this case, we're console-logging event.target. event.target reports the element on which the event occurs, in this case, the click event. Test the app in the browser and click on different elements inside page-content to see what event.target is each time, as shown in the following animation:
+
+DevTools shows four different HTML elements logged in the console.
+
+The event listener triggers not only when page-content itself is clicked but any element inside it (the <ul> lists, the <button> elements, etc.). Thanks to event.target, though, we can know exactly which element triggered the listener.
+
+Test the app again and click on an Edit button, then click on a Delete button. You'll see that event.target is different in both cases:
+
+Start of code snippet<button class="btn edit-btn" data-task-id="0">Edit</button>
+<button class="btn delete-btn" data-task-id="0">Delete</button>End of code snippet
+What uniquely identifies the Delete versus the Edit button? The Delete button has a class called .delete-btn on it. While it's easy to see that distinction in the console, how can we translate that into code? How could we check the class name on the element that was clicked?
+
+We could use a property that we've used in the past, className, or there's a catch-all method called matches() that was created specifically for checking if an element matches certain criteria. The matches() method is similar to using the querySelector() method, but it doesn't find and return an element. Instead, it returns true if the element would be returned by a querySelector() with the same argument, and it returns false if it wouldn't.
+
+Revise taskButtonHandler() to include the if statement shown in the following code:
+
+var taskButtonHandler = function(event) {
+  console.log(event.target);
+
+  if (event.target.matches(".delete-btn")) {
+    console.log("you clicked a delete button!");
+  }
+};
+Save script.js and refresh the browser. Click on different elements again and verify that the second console.log() only happens if a Delete button is clicked, shown in the following image:
+
+The console logged an Edit button, then a Delete button, then the message "you clicked delete".
+
+Remember, the click event is always firing regardless of which elements are clicked, so it's up to us to capture the element that we actually care about. With the if statement in place, we now know exactly when a Delete button is clicked. The next problem to solve is knowing which task the Delete button belongs to. There could be tens or hundreds of Delete buttons on the page, but think about what we set up earlier that helps us uniquely identify them.
+
+PAUSE
+What HTML attribute holds the task's id?
+
+Answer
+Previously when we created these <button> elements, we used the setAttribute() method to set the data-task-id. Now we want to get that attribute. It's no coincidence that the method we'll use is getAttribute(). The getAttribute() method is available on any DOM element. Since event.target is a reference to a DOM element, we can use the method there as well.
+
+Update taskButtonHandler() to console-log what this method returns, as shown in the following code:
+
+var taskButtonHandler = function(event) {
+  console.log(event.target);
+
+  if (event.target.matches(".delete-btn")) {
+    // get the element's task id
+    var taskId = event.target.getAttribute("data-task-id");
+    console.log(taskId);
+  }
+};
+Test the app in the browser again and notice that the second console.log() returns a number that corresponds to the data-task-id attribute on the HTML element itself. The following image shows this:
+
+The console shows two delete buttons logged, followed by each task id.
+
+Now that we have the id, we can use it to remove the entire task from the DOM. While we could do that right here in the taskButtonHandler() function, it's good practice to follow the separation of concerns and do the actual deletion in its own function. It might seem like we're creating too many functions, but this does make the code easier to maintain and test.
+
+Add a Delete Task Function
+In script.js, create the following new function that uses taskId as a parameter:
+
+var deleteTask = function(taskId) {
+  console.log(taskId);
+};
+Then call this function from taskButtonHandler() by adding the following code:
+
+if (event.target.matches(".delete-btn")) {
+  var taskId = event.target.getAttribute("data-task-id");
+  deleteTask(taskId);
+}
+Save script.js and try running this in the browser again by clicking the Delete button on a task. We should see a similar result as before, but now the console.log() printing our task item's id is coming from the deleteTask() function instead of our handler function.
+
+PRO TIP
+Now that we've captured the id of the task we want to delete, how do we go about actually deleting it? Luckily for us, the data-task-id attribute wasn't only applied to the Delete button; it's on the task's <li> element as well.
+
+Update the deleteTask() function to include the following code:
+
+var deleteTask = function(taskId) {
+  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+  console.log(taskSelected);
+};
+See that we're selecting a list item using .task-item and further narrowing the search by looking for a .task-item that has a data-task-id equal to the argument we've passed into the function. Also notice that there's no space between the .task-item and the [data-task-id] attribute, which means that both properties must be on the same element; a space would look for a element with the [data-task-id] attribute somewhere inside a .task-item element.
+
+Now save script.js and run the code in the browser by clicking on a task item's Delete button. The following image shows how this looks in the console:
+
+DevTools console shows an li element with multiple child elements.
+
+Using querySelector() with a selector like .task-item[data-task-id='0'] allowed us to find a different element with the same data-task-id attribute. We used a similar method earlier when we wanted to get the values from our form elements. With the form, we selected the element type (input) and then specified what attribute we were looking to match (input[name='task-name']). Here, we are selecting the element by its class name, and then checking to see if it also has the specific data attribute value.
+
+Now that we have the correct element, let's update deleteTask() one more time to actually remove it from the page. Add the following code to do that:
+
+var deleteTask = function(taskId) {
+  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+  taskSelected.remove();
+};
+Again, save script.js and run this code in the browser to test the functionality. When a Delete button is clicked, the corresponding task item should be removed from the page entirely thanks to the aptly named remove() method.
+
+Now that we've handled the functionality for capturing button clicks in our task list and deleting them, we can move on to editing a task.
+
+
+
+
+4.3.8
+    It's time to add the ability to edit an existing task. Let's take a step back and look at the big picture. Editing a task involves the following two actions:
+
+            Loading the task's current information into the form.
+
+            On form submit, updating the task element's content.
+
+            Visualizing the problem as two separate issues can help keep it from feeling overwhelming. For now, we're only concerned with putting an existing task's data into the form. This happens any time an Edit button is clicked. However, Edit buttons present the same dilemma that Delete buttons did—there are too many of them.
+
+            PAUSE
+            How can you know when an Edit button is clicked?
+
+            Answer
+            Fortunately, we can leverage the work we did with deleting a task to facilitate this process. Edit buttons already have a data-task-id attribute, after all. Editing can also use the same taskButtonHandler() handler function as a starting point.
+
+            Update taskButtonHandler() to accommodate both button clicks so that it resembles the following code:
+
+            var taskButtonHandler = function(event) {
+            // get target element from event
+            var targetEl = event.target;
+
+            // edit button was clicked
+            if (targetEl.matches(".edit-btn")) {
+                var taskId = targetEl.getAttribute("data-task-id");
+                editTask(taskId);
+            } 
+            // delete button was clicked
+            else if (targetEl.matches(".delete-btn")) {
+                var taskId = targetEl.getAttribute("data-task-id");
+                deleteTask(taskId);
+            }
+            };
+            Add an Edit Task Function
+            Similar to what you did with deleteTask(), add a new function for editing that creates its own taskSelected variables based on the provided taskId. The function should look like the following code:
+
+            var editTask = function(taskId) {
+            console.log("editing task #" + taskId);
+
+            // get task list item element
+            var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+            };
+            If you haven't already, save and test the app in the browser. Clicking an Edit button should console-log the appropriate task id.
+
+            We've also defined a taskSelected variable that references the entire <li> element. We don't need everything from this element, though. The only pieces of information we care about are the task's name and type. In the DOM, these are an <h3> element and a <span> element respectively:
+
+            Start of code snippet<h3 class="task-name">Sample Task</h3>
+            <span class="task-type">Mobile</span>End of code snippet
+            We didn't add data-task-id attributes to these elements, so how do we find them? We already have the parent <li> element, so we can use that as a querySelector() starting point.
+
+            Update the editTask() function to look like the following code:
+
+            // get task list item element
+            var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+
+            // get content from task name and type
+            var taskName = taskSelected.querySelector("h3.task-name").textContent;
+            console.log(taskName);
+
+            var taskType = taskSelected.querySelector("span.task-type").textContent;
+            console.log(taskType);
+            In the past, we've used querySelector() with the document object, but any DOM element can use this method. document.querySelector() searches within the document element, which is the entire page, while taskSelected.querySelector() only searches within the tastSelected element. Thus, we can narrow our search to the task item at hand to find its name (h3.task-name) and type (span.task-type).
+
+            Test the app in the browser to verify if the console.log() statements display the correct data.
+
+            Now that we have the information we want, we can reuse the selectors from before to update the form. Delete the console.log() statements in the function, and then add the following lines of code after the var taskType expression:
+
+            document.querySelector("input[name='task-name']").value = taskName;
+            document.querySelector("select[name='task-type']").value = taskType;
+            Save the script.js file again and refresh the browser. After creating a task, click the Edit button. If all is well, the task's name and type should appear in the form inputs, which is shown in the following image:
+
+            The form inputs and task list item have the same content.
+
+            To make it clear to the user that the form is now in "edit mode," we should also update the text of the submit button to say "Save Task".
+
+            Add the following line to editTask():
+
+            document.querySelector("#save-task").textContent = "Save Task";
+            In the browser, the button text will change after an Edit button has been clicked. The following image shows the "Save Task" button:
+
+            The form button says Save Task.
+
+            This is a nice UI improvement for the user, but we also need some way for us, the developer, to know which task is currently being edited. So far, we've only added the task's name and type to the form. The id is lost, meaning when the user presses Save Task, where does that information go?
+
+            Let's make one more addition to the editTask() function. Add the following code to include the task's id:
+
+            formEl.setAttribute("data-task-id", taskId);
+            This will add the taskId to a data-task-id attribute on the form itself. It's a new attribute that users won't see but that we can use later on to save the correct task.
+
+            Test out the app again to ensure this works. To do that, refresh the form, create a task, then click edit. If you then examine the <form> element in the DOM display, it should contain the "data-task-id" and attribute corresponding to the task being edited, which is shown in the following image:
+
+            DevTools highlighting the form element having a data-task-id attribute.
+
+            Congratulations, we're almost done adding this new feature! We haven't finished adding the ability to edit a task, of course, but this is a good milestone that's worth committing with Git.
+
+
+4.3.9
+
+                    On our journey to update (i.e., edit) a task, we first had to load the task's information into the form. The next bit of logic will involve saving the task and changing the necessary DOM elements.
+
+                PAUSE
+                Because we're using the same form, how do we know when a new task is being created versus an old task being updated?
+
+                Answer
+                The data-task-id attribute that we added to the form will serve two purposes. One, it keeps track of which task we're editing. Two, its existence lets us know that, yes, a task is being edited in the first place. A handy way of knowing if an element has a certain attribute or not is to use the hasAttribute() method.
+
+                Add the following lines to your existing taskFormHandler() function above the declaration for var taskDataObj at the end:
+
+                var isEdit = formEl.hasAttribute("data-task-id");
+                console.log(isEdit);
+                With the DevTools console open, first create a new task, then edit a task and click the Submit button. (Remember, every time we submit, we run the taskFormHandler function.) When we submit the form to create a new task, isEdit will be false, and false will display in the console. When we submit after editing, isEdit will be true, and true will display in the console. Awesome—this means we can use the same form handler for new and old tasks!
+
+                Let's now do two things. First, delete the console.log() beneath isEdit. Then, replace createTaskEl(taskDataObj); with the following block of code, which wraps the createTaskEl() call and taskDataObj variable in an if/else statement (make sure that it follows the isEdit variable initialization):
+
+                // PUT THIS BELOW `var isEdit = ...` in `taskFormHandler()`
+
+                // has data attribute, so get task id and call function to complete edit process
+                if (isEdit) {
+                var taskId = formEl.getAttribute("data-task-id");
+                completeEditTask(taskNameInput, taskTypeInput, taskId);
+                } 
+                // no data attribute, so create object as normal and pass to createTaskEl function
+                else {
+                var taskDataObj = {
+                    name: taskNameInput,
+                    type: taskTypeInput
+                };
+
+                createTaskEl(taskDataObj);
+                }
+                This way, createTaskEl() will only get called if isEdit is false. If it's true, we'll call a new function, completeEditTask(), passing it three arguments: the name input value, type input value, and task id.
+
+                Let's create the completeEditTask() function now. Write the following function in the main body of the JavaScript file:
+
+                var completeEditTask = function(taskName, taskType, taskId) {
+                console.log(taskName, taskType, taskId);
+                };
+                At this point, the function logs the parameters to the console so we can verify that it is working and getting the data it needs. To check this, restart the app, create a task, select edit to bring it into the form fields, then submit. If all went well, the taskNameInput, taskTypeInput, and taskId will be logged to the console.
+
+                We'll use taskId to find the correct <li> element and use taskName and taskType to update the <li> element's children accordingly.
+
+                Replace the console.log() in completeEditTask() with the following code:
+
+                // find the matching task list item
+                var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+
+                // set new values
+                taskSelected.querySelector("h3.task-name").textContent = taskName;
+                taskSelected.querySelector("span.task-type").textContent = taskType;
+
+                alert("Task Updated!");
+                Also reset the form by removing the task id and changing the button text back to normal by adding the following code below the alert():
+
+                formEl.removeAttribute("data-task-id");
+                document.querySelector("#save-task").textContent = "Add Task";
+                By removing the data-task-id attribute, we ensure that users are able to create new tasks again. Try it out in the browser, switching between making tasks and editing existing tasks. If anything seems off, check the console for errors. An error like Uncaught TypeError: Cannot set property 'textContent' of null, for instance, suggests one of the selectors is wrong.
+
+                One opportunity for a bug lies in the querySelector in the code above, if you were to make a minor typo. h3.task-name isn't the same as h3 .task-name: the former looks for <h3> elements with a class of task-name, whereas the latter looks for elements with a class of task-name that are descendent elements of an <h3> element. The latter would return null, and because there is no textContent property on null, the browser itself would report an error message in the console.
+
+
+
+
+
+
+                            4.3.9.
+
+                            There's still one last method in which a task can be updated. Tasks have a status—To Do, In Progress, Completed—that isn't updated through the main form but rather through individual <select> elements. Changing the value of the <select> element should automatically move the task from one column to another, as you can see in the following image:
+
+A To Do, In Progress, and Completed column sit side by side.
+
+Because we'll be interacting with the remaining two columns, add the following two new variables at the top of script.js to reference them:
+
+var tasksInProgressEl = document.querySelector("#tasks-in-progress");
+var tasksCompletedEl = document.querySelector("#tasks-completed");
+We technically already have a click event listener set up for the tasks' <select> elements thanks to the event delegation of taskButtonHandler(), which listens to events on the entire <main> element of the document. This click event doesn't really help us here, though, because a <select> click only fires on the initial click. Depending on the browser, the second click to choose an option fires on the <option> element instead of the <select> element. That sounds like a bigger headache to sort out than it's worth.
+
+Thankfully, there are more events besides click and submit that we can tap into. There's also a change event that triggers, as the name implies, any time a form element's value changes. Like our Delete and Edit clicks, though, we'll need to delegate this event because it applies to multiple elements.
+
+At the bottom of script.js, add a new event listener:
+
+pageContentEl.addEventListener("change", taskStatusChangeHandler);
+Alongside your other functions, define the following new function to handle this event:
+
+var taskStatusChangeHandler = function(event) {
+
+};
+PAUSE
+On the event object, how do you get the element that triggered the event?
+
+Answer
+In the taskStatusChangeHandler() function, console-log event.target and event.target.getAttribute("data-task-id"). When you click on and change the value of the <select> element in a task item, you should see the following in the DevTools:
+
+DevTools console shows a select element and an id of zero.
+
+event.target is a reference to a <select> element, meaning we can use additional DOM methods to get this element's properties. We'll want the id so we can find the overall task item, and we'll want the value of the <select> element to know which other column to move it to.
+
+Update the function to create the following variables:
+
+var taskStatusChangeHandler = function(event) {
+  // get the task item's id
+  var taskId = event.target.getAttribute("data-task-id");
+
+  // get the currently selected option's value and convert to lowercase
+  var statusValue = event.target.value.toLowerCase();
+
+  // find the parent task item element based on the id
+  var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+};
+Converting the value to lowercase might seem unnecessary, but it helps future-proof the app in case we ever changed how the status text is displayed. Code-wise, we know we'll always check against the lowercase version. Based on whatever the value is, we can move the taskSelected element from one column to another.
+
+Add the following if statements to the end of the taskStatusChangeHandler() function:
+
+if (statusValue === "to do") {
+  tasksToDoEl.appendChild(taskSelected);
+} 
+else if (statusValue === "in progress") {
+  tasksInProgressEl.appendChild(taskSelected);
+} 
+else if (statusValue === "completed") {
+  tasksCompletedEl.appendChild(taskSelected);
+}
+Remember that tasksToDoEl, tasksInProgressEl, and tasksCompletedEl are references to the <ul> elements created earlier. Thus, if the user selects "In Progress" from the dropdown, it will append the current task item to the <ul id="tasks-in-progress"> element with the tasksInProgressEl.appendChild(taskSelected) method.
+
+The interesting thing about the use of appendChild() here is that it didn't create a copy of the task. It actually moved the task item from its original location in the DOM into the other <ul>. It's important to note that the variable taskSelected didn't create a second <li>. That would only be the case if we used document.createElement(). Instead, it's a reference to an existing DOM element, and we simply appended that existing element somewhere else.
+
+Save and test the app in the browser to make sure the tasks move to the correct column when the dropdown changes. If it does, take a moment to appreciate what you've accomplished.
