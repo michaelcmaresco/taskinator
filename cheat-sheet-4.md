@@ -1338,3 +1338,228 @@ Save and test the app in the browser to make sure the tasks move to the correct 
             We just learned a lot of code for functionality that doesn't affect the page, but remember our end goal: storing all of the task's data as a JavaScript array will make it easier to save that data to localStorage.
 
             This is a good time to add, commit, and push your code to the GitHub feature branch before moving on.
+
+    4.4.5
+             Save tasks to local storage
+            Well, the task data is all prepared and ready to be saved, so let's save it! Although this part is relatively simple, we still have to consider one thing: how do we know when to save the data? The answer is: any time the data changes.
+
+            We'll start by creating a function for saving tasks to localStorage, then we'll execute that function every time we add, update, or delete any tasks. Right above the addEventListener() method at the bottom of script.js, create a function called saveTasks:
+
+            var saveTasks = function() {
+
+            }
+            The content of this function will be light—very light, actually. Only one method will be executed. Which one do you think it is?
+
+            Here's a hint: it's a localStorage method.
+
+            PAUSE
+            Which method saves data to localStorage: setItem() or getItem()?
+
+            Answer
+            Let's add the following code to the saveTasks() function:
+
+            localStorage.setItem("tasks", tasks);
+            That's all we need to do! Simple, right? Let's add the saveTasks() function call to the following create, update, and delete task functions:
+
+            In createTaskEl(), add it anywhere after the tasks.push(taskDataObj) method.
+
+            In completeEditTask(), add it anywhere after the for loop.
+
+            In taskStatusChangeHandler(), add it at the end of the function.
+
+            In deleteTask(), add it at the end of the function.
+
+            Now save script.js. Before we can test the application, we need to do some clean-up work in Chrome's local storage.
+
+            You likely have local storage left over from the past project. Let's clear it out. Open DevTools and select the Application tab. Then select "Clear storage" next to the trash can icon. Click the "Clear site data" button in the dialog that appears—and you're good to go!
+
+            Now refresh the browser, create a task or two, and open DevTools again. Select the Application tab, select the Local Storage dropdown list, and then select the file:// option.
+
+            Right now, the localStorage for this application should look something like the following image in DevTools:
+
+            Console shows localStorage with non-string data.
+
+            We weren't expecting this, were we? We packaged up the data so neatly—we even logged it to the console to make sure it looked right. So why is localStorage storing it as [object Object]?
+
+            Unfortunately, localStorage can only store one type of data: strings. If we store a number in localStorage, it will turn into a string. If we store the Boolean true, it will end up as "true" instead. Because objects and arrays aren't simple data values and can comprise multiple data types, a computer can't easily convert them to strings in the same way it can do so with numbers and Booleans. However, a couple of built-in JavaScript tools allow us to perform this conversion ourselves.
+
+            Let's edit the saveTasks() function to look like the following code:
+
+            var saveTasks = function() {
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            }
+            Try saving a task or two again, then check what gets stored in localStorage. The result should look like the following image:
+
+            Console shows localStorage with string data.
+
+            Suddenly, localStorage understands what we're saving! As the method name stringify() implies, we just converted the tasks array into a string for saving in localStorage.
+
+            The quotation marks that wrap the code tell us it's a string. But what is this whole JSON thing that stringify() is chained on to? JSON stands for JavaScript Object Notation, which is a means of organizing and structuring data that's transferred from one place to another. We'll explore JSON in depth later in the course when we get further into transferring data from one place to another. For now, the stringify() method worked for us, so we can move on.
+
+            DEEP DIVE
+            Okay, one half of this functionality is complete: we can now save the tasks. Next, we'll work on retrieving the saved tasks on page load.
+
+            Before we move on, delete the console.log() statements that we added to taskStatusChangeHandler and createTaskEl. And don't forget to add, commit, and push the code to the GitHub feature branch!
+
+        4.4.6
+                There's only one more function to build before Taskinator is ready for real-life use. In the previous step, we saved data—because, after all, we can't load data that hasn't been saved. In this step, we'll add the functionality to retrieve that saved data.
+
+                Specifically, we'll build a loadTasks() function that does the following:
+
+                Gets task items from localStorage.
+
+                Converts tasks from the string format back into an array of objects.
+
+                Iterates through a tasks array and creates task elements on the page from it.
+
+                That last part should seem pretty familiar to us, as we've already created task elements for the page. We can probably look to the createTaskEl() function code for help in making this loadTasks() function happen.
+
+                As we near the end of this module, we'll provide less code and instruction so that you can draw from your existing knowledge and try to figure things out on your own. It's okay if it takes a few tries. The mental struggle that's involved with figuring things out on your own has been proven to boost learning and retention of new skills.
+
+                HINT
+                Add a loadTasks Function
+                Let's create a function called loadTasks() right after the saveTasks() function, to keep them together. Once you've created that function, use the pseudocode to stay on track. Just before the function, add the three pseudocode steps from the list for the loadTasks() function (at the beginning of this section). Remember to use JavaScript comment syntax for this pseudocode.
+
+                PRO TIP
+                The loop we create will have a lot going on. We'll pseudocode those steps when we get to it, but let's make sure the three main pieces work first.
+
+                Retrieve Tasks from localStorage
+                We can't print tasks to the page if we haven't retrieved them from localStorage, so let's do that first. We saved these tasks from the tasks variable previously, so let's load them back into that variable. Specifically, the first line of code in loadTasks() should reassign the tasks variable to whatever localStorage returns.
+
+                To figure out how to do this, ask yourself the following questions:
+
+                Should we use the var keyword if we're just reassigning the tasks variable we created at the top of the page?
+
+                What method do we use to retrieve data from localStorage, and what item in localStorage are we retrieving?
+
+                Let's proceed with implementing this!
+
+                Test the Task Retrieval
+                Once we've reassigned the tasks variable to the data we retrieved from localStorage, we should test it. Add a console.log() right below the line of code we just wrote, and call loadTasks() at the very bottom of the script.js file. When we refresh the page, that function will run and try to find what's in localStorage.
+
+                When we run the function, the console.log() that we added should look like the following image:
+
+                Console shows string data from localStorage.
+
+                If data comes back into tasks from localStorage, we should see the stringified version of the task array. If nothing returns for the tasks from localStorage, then tasks will have a value of null. Both outcomes would cause an issue, so let's consider how to fix them.
+
+                If nothing returns from localStorage, then tasks has a value of null. When we try adding another task and use tasks.push(), we get an error because the push() method only works on arrays. To fix this issue, we should check if the value of tasks is null and if it is, reassign tasks yet again to an empty array. Let's do that now; then we'll worry about turning the string back into an array.
+
+                In loadTasks(), after you retrieve and console.log() the tasks variable, do the following:
+
+                Check if tasks is equal to null by using an if statement.
+
+                If it is, set tasks back to an empty array by reassigning it to [] and adding a return false. We don't want this function to keep running with no tasks to load onto the page.
+
+                If it's not null, we don't have to worry about it and we can skip the if statement's code block.
+
+                HINT
+                Get the Tasks into an Object Array
+                Any data in localStorage for tasks to retrieve is still in a string format, and we have to get it back into an array of objects. To do that, add the following code after the new if statement:
+
+                tasks = JSON.parse(tasks);
+                We used JSON.stringify() previously to convert an array of objects to a string, so what do you think JSON.parse() does? Add a console.log() after the preceding code to see what happens to the tasks variable. The following image shows this in the console:
+
+                Parsed array of task objects from localStorage.
+
+                It turns it back into a real array of objects! That's great; with the data back to normal now, we can actually use it like an array of objects.
+
+                DEEP DIVE
+                Print Task Items to the Page
+                With the data back in its array form, we can iterate over it. Because each element in the array is a task's object, with those values we can create DOM elements and print them to the page.
+
+                Create a for loop with a condition of i < tasks.length. Test it by using console.log(tasks[i]) inside the loop. The console should print all the task objects we've created, one by one. Study the properties of each task object.
+
+                Once you've created and tested the loop, follow these instructions to print the task items to the page:
+
+                HINT
+                To keep the id for each task in sync, reassign the id property of task[i] to the value of taskIdCounter.
+
+                Add console.log(tasks[i]) after reassigning the id property. This way, we can see them printing in order in the console.
+
+                Create a <li> element and store it in a variable called listItemEl.
+
+                Give it a classname attribute of task-item.
+
+                Using setAttribute(), give it a data-task-id attribute with a value of tasks[i].id.
+
+                The following image shows console.log(listItemEl) in the console:
+
+                List item element in console.
+
+                If more than one element has the same data-task-id attribute value, don't worry—we'll fix that at the end of this lesson.
+
+                Create a <div> element and store it in a variable called taskInfoEl.
+
+                Give it a classname property of task-info to set the HTML class attribute.
+
+                Set its innerHTML property to the following:
+
+                taskInfoEl.innerHTML = "<h3 class='task-name'>" + tasks[i].name + "</h3><span class='task-type'>" + tasks[i].type + "</span>";
+                Append taskInfoEl to listItemEl.
+
+                Create the actions for the task by creating a variable called taskActionsEl and giving it a value of createTaskActions() with tasks[i].id as the argument.
+
+                Append taskActionsEl to listItemEl.
+
+                Check that taskActionsEl was appended to listItemEl correctly by using a console.log(listItemEl);. It should look like the following image:
+
+                Console shows task actions added to list item.
+
+                With an if statement, check if the value of tasks[i].status is equal to to do.
+
+                If yes, use listItemEl.querySelector("select[name='status-change']").selectedIndex and set it equal to 0.
+
+                Append listItemEl to tasksToDoEl.
+
+                With else if, check if the value of tasks[i].status is equal to in progress.
+
+                If yes, use listItemEl.querySelector("select[name='status-change']").selectedIndex and set it equal to 1.
+
+                Append listItemEl to tasksInProgressEl.
+
+                With else if, check if the value of tasks[i].status is equal to complete.
+
+                If yes, use listItemEl.querySelector("select[name='status-change']").selectedIndex and set it equal to 2.
+
+                Append listItemEl to tasksCompletedEl.
+
+                Increase taskIdCounter by 1.
+
+                Add one more console.log(listItemEl) after incrementing the counter, then test it. The elements should look like the following image:
+
+                Task list items with incrementing task-id attributes.
+
+                As the preceding image shows, now the elements get unique data-task-id values because we're incrementing the taskIdCounter variable during each iteration of the loop.
+
+                This seems like a lot of work for a for loop, but most of this code is already written in createTaskEl(). We can refer to that code to see how it works and replace some values with the values of tasks[i]'s properties. Don't be afraid to refer to createTaskEl() and other functions you've created throughout the build of Taskinator—this doesn't all have to come from memory yet!
+
+                Once complete, save and test it again. The tasks now load to their correct lists based on status! You now have a fully working task-tracking application—and a personal project that you've created for yourself.
+
+                Note that the new for loop uses a lot of repeated code from createTaskEl(). This means that we're entering technical-debt territory—if we change how something functions or looks, we have to change code in both createTaskEl() and loadTasks(), which could lead to errors. To prevent that, we can refactor loadTasks() to use createTaskEl() when printing tasks. We'll do that in the next step, which is optional.
+
+
+4.4.6 Stopping point 
+
+
+
+OFFICE HOURS
+
+src map: not relevant
+
+- .1 create an uppend - looks disgusting in a develop file, just showing we can use javascript
+
+javascript can help you find things, take things away. 
+
+.2 event listeners VERY IMPORTANT , UNDERSTAND THESE
+
+BREAK IT, MESS AROUND WITH IT., 
+
+.3 timers and intervals, usually can find on codepen, not that importna,, look at the timer intervals, understand it, but 
+    come to here and steal it. 
+
+.4 data attributes - look at it, dont reaslly use ity as a dfeveloper
+
+.5 local storage = very important VERY IMPORTANT, TAKING SOMETHING AND PUTTING IT SOMEWHERE ELSE. 
+
+4.4.7 Optimize Code (Optional)
