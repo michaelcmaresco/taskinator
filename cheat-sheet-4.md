@@ -1116,3 +1116,225 @@ Remember that tasksToDoEl, tasksInProgressEl, and tasksCompletedEl are reference
 The interesting thing about the use of appendChild() here is that it didn't create a copy of the task. It actually moved the task item from its original location in the DOM into the other <ul>. It's important to note that the variable taskSelected didn't create a second <li>. That would only be the case if we used document.createElement(). Instead, it's a reference to an existing DOM element, and we simply appended that existing element somewhere else.
 
 Save and test the app in the browser to make sure the tasks move to the correct column when the dropdown changes. If it does, take a moment to appreciate what you've accomplished.
+
+
+4.4.1
+            - intro
+            .2
+            - preview
+            -  Adding persistence with localStorage will enable us to keep tasks in their corresponding status lists after refreshing the page. The following animation shows the tasks persisting through a page refresh:
+
+            Cursor clicks the page refresh icon to reload Taskinator, and the tasks remain in their lists.
+
+            The UI and core functionality won't change, but this new feature will make Taskinator more usable. To make this possible, we'll need to restructure the app's data to make it easier to save and retrieve from localStorage.
+
+            Let's consider the best approach to accomplishing this goal:
+
+            Create a feature branch. We'll create a feature branch that corresponds to the GitHub issue we're addressing in this lesson.
+
+            Save tasks to an array. We'll organize all the elements that correspond to a task into an object, and save those objects into an array.
+
+            Save tasks to localStorage. We'll implement the ability to save our tasks to localStorage so that they can be retrieved later.
+
+            Load tasks from localStorage. We'll add the ability to retrieve saved tasks from localStorage.
+
+            Optimize the code. We'll reduce our technical debt by refactoring the code. This is a best practice and a good habit to develop.
+
+            Save our progress with Git. We'll merge the feature branch into the develop branch and push our changes to GitHub.
+
+            Deploy to GitHub Pages. We'll deploy our finished application to GitHub Pages so we can show it off to the world and use it anywhere!
+
+            In the first part of the lesson, we'll set up the localStorage functionality. During that process, we'll be creating similar functionality to code we've written earlier. At that point, we could leave the code as it is, but that would be missing a good opportunity to refactor it so that we can reuse the existing functionality. Therefore, the latter part of the lesson will be devoted to refactoring the code and deploying the app to GitHub Pages.
+
+            Let's get started by creating a feature branch for the issue.
+
+        .3 : creating a new branch
+
+            Let's review the GitHub issue pertaining to this feature one more time, and then create the feature branch. The following image shows the issue we're working on:
+
+            GitHub issue for persistence.
+
+            Because this issue is about persistence, let's call the feature branch feature/task-persistence. We'll create it now from the command line by following these steps:
+
+            Use git branch to ensure that we're in the develop branch, as we want to build on that branch's code.
+
+            Create a new branch for this feature by using the following command:
+
+            git checkout -b feature/task-persistence
+            As we know, this command creates the branch and moves us into it, but we can use git branch one more time just to double-check.
+
+            Now that we've confirmed that we're in the correct branch, let's get started!
+
+        .4 : save tasks to an array. 
+
+            Currently, all the data associated with a task is kept with its respective DOM element on the page. This means that if we were to try to save this data to localStorage, we'd have to find every task item and pull the important data from it. We can't use a querySelector() method to save the entire task item element to localStorage because localStorage can only save data as a string, and it is difficult to convert DOM elements to strings.
+
+            This all indicates that the task data is set up in a way that's difficult to organize and store, so we'll need a different storage solution. This solution should package each task's id, name, type, and status together, as shown in the following code:
+
+            var taskDataObj = {
+            id: 1,
+            name: "Add localStorage persistence",
+            type: "Web",
+            status: "in progress"
+            }
+            The good news is that we started the process of organizing task data into an object in a previous lesson when we sent the task's data from taskFormHandler() to createTaskEl() as an argument. Now we just need to update that object to hold more information.
+
+            We'll have more than one task to store, obviously, so creating a variable for each task isn't maintainable or practical.
+
+            PAUSE
+            How might we keep a list of the task objects in one variable?
+
+            Answer
+            Our solution will be to create a new variable in script.js to hold an array of task objects, as shown in the following code example:
+
+            var tasks = [
+            {
+                id: 1,
+                name: "Add localStorage persistence",
+                type: "Web",
+                status: "in progress"
+            },
+            {
+                id: 2,
+                name: "Learn JavaScript",
+                type: "Web",
+                status: "in progress"
+            },
+            {
+                id: 3,
+                name: "Refactor code",
+                type: "Web",
+                status: "to do"
+            }
+            ];
+            Create a Tasks Array Variable
+            The tasks array will look like the preceding code only after we start adding tasks to it. To get there, let's start by creating an empty array variable. Add the following code towards the top of the script.js file where you declared other variables:
+
+            var tasks = [];
+            We've created an empty tasks array. Now when we create a new task, the object holding all of its data can be added to the array. We just need to update the object that holds the task's data to also include its id and status, both of which are only written to the associated DOM element.
+
+            In the taskFormHandler() function, let's update the taskDataObj variable to include a status property. Because this data gets sent to createTaskEl(), we can safely assume that the status will always have a value of to do. This is because a task that has just been created cannot possibly be in progress or complete yet.
+
+            Update the taskDataObj variable to look like the following code:
+
+            var taskDataObj = {
+            name: taskNameInput,
+            type: taskTypeInput,
+            status: "to do"
+            }
+            Let's test this and add a console.log() into the createTaskEl() function. This will help us ensure that the new property gets to the function via the taskDataObj parameter that we set up.
+
+            In createTaskEl(), add the following code anywhere in the function:
+
+            console.log(taskDataObj);
+            console.log(taskDataObj.status);
+            Save script.js, refresh the app in the browser, and submit a new task. The following image shows what these two console.log() functions look like in the console:
+
+            Console showing the Task object passed into function.
+
+            As we can see, createTaskEl() now receives this new status property in its taskDataObj parameter.
+
+            The only thing missing from the task's object now is its id. Luckily, we already have the value of the id in the taskIdCounter variable and are using it in the createTaskEl() function. We need to add that value as a property to the taskDataObj argument variable and add the entire object to the tasks array.
+
+            After listItemEl.appendChild(taskInfoEl); and before taskIdCounter++;, update createTaskEl() with the following code:
+
+            taskDataObj.id = taskIdCounter;
+
+            tasks.push(taskDataObj);
+            Syncing the Object Array with the GUI/DOM
+            Remember, we're now managing two task lists: one in the visible GUI that's represented in the DOM, and one only found in our code in the form of an array of objects. So when we edit or delete a task in the GUI/DOM, we need to do the same to the object that represents it in our array. This syncs the array data that we'll be putting in localStorage with the GUI/DOM data.
+
+            We did this by adding an id property to the taskDataObj argument and giving it the value of whatever taskIdCounter is at that moment. This way, the id of the newly created DOM element gets added to the task's object as well. We can use that id later to identify which task has changed for both the DOM and the tasks array.
+
+            IMPORTANT
+            Just as we can reassign the value of an object property, we can also create new properties as needed.
+
+            Once we gave the task its id value, we had to get that object into the tasks array, so we used an array method called push(). This method adds any content between the parentheses to the end of the specified array.
+
+            Developers use this method a lot, so let's look at the following examples of how it could be used in Taskinator:
+
+            var pushedArr = [1, 2, 3];
+
+            pushedArr.push(4); 
+            // pushedArr is now [1,2,3,4]
+
+            pushedArr.push("Taskinator"); 
+            // pushedArr is now [1,2,3,4,"Taskinator"]
+
+            pushedArr.push(10, "push", false); 
+            // pushedArr is now [1,2,3,4,"Taskinator",10,"push",false]
+            DEEP DIVE
+            This update won't yield any visible differences on the page, but we can still test to make sure it works.
+
+            Save script.js, refresh the page, and create a task or two. Then, in the Chrome DevTools console, type console.log(tasks). Pressing Enter to run the log function should return a printed list of the tasks in an array of objects, as shown in the following image:
+
+            Tasks array in the console.
+
+            Now the tasks array stores any tasks we add to the page, along with all their important information.
+
+            So we've added the ability to save a task not only to the page but in the array as well. Because we also update and remove tasks as well as add them, we'll have to update the completeEditTask(), taskStatusChangeHandler(), and deleteTask() functions too.
+
+            Find and Edit Array Data
+            To sync the data presented by the DOM with the data stored in the tasks array, we’ll change the functions for updating and deleting tasks in the DOM so that they also update and delete tasks in the tasks array.
+
+            We'll do this by looking up the task in the array by its id value. Then we'll update its object properties or remove it from the task array entirely. How do we find an element in an array by its id? We'll have to check each task in the array for an id property equal to the updated id of the task.
+
+            In the completeEditTask() function, add the following for loop after the two querySelector() methods so that it looks like the following code:
+
+            // THIS CODE IS ALREADY IN PLACE
+            taskSelected.querySelector("h3.task-name").textContent = taskName;
+            taskSelected.querySelector("span.task-type").textContent = taskType;
+
+            // loop through tasks array and task object with new content
+            for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].id === parseInt(taskId)) {
+                tasks[i].name = taskName;
+                tasks[i].type = taskType;
+            }
+            };
+            At each iteration of this for loop, we are checking to see if that individual task's id property matches the taskId argument that we passed into completeEditTask(). There is one problem: taskId is a string and tasks[i].id is a number, and when we compare the two, we need to make sure that we are comparing a number to a number. This is why we wrap the taskId with a parseInt() function and convert it to a number for the comparison.
+
+            If the two id values match, then we've confirmed that the task at that iteration of the for loop is the one we want to update, and we've reassigned that task's name and type property to the new content submitted by the form when we finished editing it.
+
+            PRO TIP
+            Now that we've gotten the completeEditTask() function to update the task array, let's turn our attention to the other functions that deal with updating tasks, starting with taskStatusChangeHandler(). In completeEditTask(), we focused on updating a task's name or type. Here, we only need to worry about updating a task's status. Let's use a for loop again, but with a different property to reassign.
+
+            At the bottom of the taskStatusChangeHandler() function, add the following code:
+
+            // update task's in tasks array
+            for (var i = 0; i < tasks.length; i++) {
+            if (tasks[i].id === parseInt(taskId)) {
+                tasks[i].status = statusValue;
+            }
+            }
+            Add another console.log(tasks); after the for loop so we can verify that it's working. Save script.js, create a task, and update its status through the task's <select> dropdown. After this, the console should display an updated tasks array reflecting that task's new status.
+
+            That wraps it up for taking care of updating tasks! Next, we'll delete them from the tasks array.
+
+            Delete a Task from the Array
+            Just as we used a for loop to identify and update a task's information, we'll use a for loop to identify a task that we want to remove. Because we're removing a task, however, we'll need to take a couple of extra steps to get there.
+
+            Find the deleteTask() function and add the following code to the bottom of it:
+
+            // create new array to hold updated list of tasks
+            var updatedTaskArr = [];
+
+            // loop through current tasks
+            for (var i = 0; i < tasks.length; i++) {
+            // if tasks[i].id doesn't match the value of taskId, let's keep that task and push it into the new array
+            if (tasks[i].id !== parseInt(taskId)) {
+                updatedTaskArr.push(tasks[i]);
+            }
+            }
+
+            // reassign tasks array to be the same as updatedTaskArr
+            tasks = updatedTaskArr;
+            Let's back up and explore what we're doing here. When we updated a task's information, all we had to do was overwrite its data. We didn't have to worry about creating something new, because were just modifying something that already existed. When we delete a task, however, we essentially have to create a new array of tasks that is identical to our current one, except it won't receive the task we're deleting.
+
+            Here, we created a new empty array variable called updatedTaskArr. When we iterate through the current tasks array, we check to see if the current task in the loop (for example, tasks[i]) does not have the same id value as the task we want to delete. If it's not the same task, then we know we should keep it, so we use the .push() method to add that task to the updatedTaskArr array.
+
+            When we're done with the for loop, our updatedTasksArr will be almost the same as the tasks array, except it won't have the task we want removed. Because we need to keep the tasks array variable up-to-date at all times, we reassign the tasks variable to updatedTasksArr so that they are now the same and do not contain the deleted task.
+
+            We just learned a lot of code for functionality that doesn't affect the page, but remember our end goal: storing all of the task's data as a JavaScript array will make it easier to save that data to localStorage.
+
+            This is a good time to add, commit, and push your code to the GitHub feature branch before moving on.
